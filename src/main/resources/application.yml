@@ -1,0 +1,52 @@
+server:
+  port: 8080 
+
+spring:
+  application:
+    name: gateway-service 
+  cloud:
+    gateway:
+      routes:
+        - id: vendor-service
+          uri: lb://vendor-service 
+          predicates:
+            - Path=/api/vendors/**
+        - id: product-service
+          uri: lb://product-service
+          predicates:
+            - Path=/api/products/**
+        - id: customer-service
+          uri: lb://customer-service
+          predicates:
+            - Path=/api/customers/**
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**
+      httpclient:
+        connect-timeout: 5000 
+        response-timeout: 5000 
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:4321/realms/ecommerce-realm
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*" 
+  endpoint:
+    health:
+      show-details: always 
+    gateway:
+      enabled: true 
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/ 
+    enabled: true 
+  instance:
+    prefer-ip-address: true 
