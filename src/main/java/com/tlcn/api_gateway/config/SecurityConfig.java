@@ -48,7 +48,7 @@ public class SecurityConfig {
                 .pathMatchers("/api/vendors/**").hasRole("VENDOR")
                 .pathMatchers("/api/customers/**").hasRole("CUSTOMER")
                 .pathMatchers("/api/orders/**").hasAnyRole("VENDOR", "CUSTOMER")
-                .pathMatchers("/api/products/**").permitAll() // Public for product browsing
+                .pathMatchers("/api/products/**").permitAll() 
                 .anyExchange().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> 
