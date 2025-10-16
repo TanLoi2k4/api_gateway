@@ -46,6 +46,7 @@ public class SecurityConfig {
                     "/api/customers/reset-password"
                 ).permitAll()
                 .pathMatchers("/api/vendors/**").hasRole("VENDOR")
+                .pathMatchers("/api/cart/**").hasRole( "CUSTOMER")
                 .pathMatchers("/api/customers/**").hasRole("CUSTOMER")
                 .pathMatchers("/api/orders/**").hasAnyRole("VENDOR", "CUSTOMER")
                 .pathMatchers("/api/products/**").permitAll() 
