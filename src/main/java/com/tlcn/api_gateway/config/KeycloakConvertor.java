@@ -23,16 +23,21 @@ public class KeycloakConvertor implements Converter<Jwt, Collection<GrantedAutho
             logger.warn("JWT claims are null");
             return new ArrayList<>();
         }
+        
+        @SuppressWarnings("unchecked")
         Map<String, Object> realmAccess = (Map<String, Object>) source.getClaims().get("realm_access");
         if (realmAccess == null || realmAccess.isEmpty()) {
             logger.debug("No realm_access found in JWT claims");
             return new ArrayList<>();
         }
+        
+        @SuppressWarnings("unchecked")
         List<String> roles = (List<String>) realmAccess.get("roles");
         if (roles == null) {
             logger.debug("No roles found in realm_access");
             return new ArrayList<>();
         }
+        
         logger.info("Converted roles: {}", roles);
         return roles.stream()
             .map(roleName -> new SimpleGrantedAuthority("ROLE_" + roleName))

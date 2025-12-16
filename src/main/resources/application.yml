@@ -4,44 +4,98 @@ server:
 spring:
   application:
     name: gateway-service
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
   cloud:
     gateway:
+      default-filters:
+        - name: RequestRateLimiter
+          args:
+            redis-rate-limiter.replenishRate: 10
+            redis-rate-limiter.burstCapacity: 20
+            key-resolver: "#{@userKeyResolver}"
       routes:
+        # VENDOR SERVICE
         - id: vendor-service
-          uri: http://localhost:8081
+          uri: lb://vendor-service
           predicates:
             - Path=/api/vendors/**
+          filters:
+            - StripPrefix=2
+            - name: CircuitBreaker
+              args:
+                name: vendorService
+                fallbackUri: forward:/fallback/vendor-service
+
+        # PRODUCT SERVICE
         - id: product-service
-          uri: http://localhost:8082
+          uri: lb://product-service
           predicates:
             - Path=/api/products/**
+          filters:
+            - StripPrefix=2
+            - name: CircuitBreaker
+              args:
+                name: productService
+                fallbackUri: forward:/fallback/product-service
+
+        # CUSTOMER SERVICE
         - id: customer-service
-          uri: http://localhost:8083
+          uri: lb://customer-service
           predicates:
             - Path=/api/customers/**
+          filters:
+            - StripPrefix=2
+            - name: CircuitBreaker
+              args:
+                name: customerService
+                fallbackUri: forward:/fallback/customer-service
+
+        # ORDER SERVICE
         - id: order-service
-          uri: http://localhost:8084
+          uri: lb://order-service
           predicates:
             - Path=/api/orders/**
-      httpclient:
-        connect-timeout: 5000
-        response-timeout: 5000
+          filters:
+            - StripPrefix=2
+            - name: CircuitBreaker
+              args:
+                name: orderService
+                fallbackUri: forward:/fallback/order-service
+
+        # CART SERVICE
+        - id: cart-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/cart/**
+          filters:
+            - StripPrefix=2
+            - name: CircuitBreaker
+              args:
+                name: cartService
+                fallbackUri: forward:/fallback/cart-service
+
+        # PAYPROMO SERVICE
+        - id: paypromo-service
+          uri: lb://paypromo-service
+          predicates:
+            - Path=/api/flash-sales/**,/api/discounts/**
+          filters:
+            - StripPrefix=2
+            - name: CircuitBreaker
+              args:
+                name: paypromoService
+                fallbackUri: forward:/fallback/paypromo-service
+
   security:
     oauth2:
       resourceserver:
         jwt:
           issuer-uri: http://localhost:4321/realms/ecommerce-realm
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "*"
-  endpoint:
-    health:
-      show-details: always
-    gateway:
-      enabled: true
 
 eureka:
   client:
@@ -53,11 +107,66 @@ eureka:
 
 logging:
   level:
+    root: INFO
     org.springframework.security: DEBUG
-    org.springframework.cloud: DEBUG
-    com.netflix.discovery: DEBUG
-    com.tlcn: DEBUG
-    org.keycloak: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+    com.tlcn.api_gateway: DEBUG
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/gateway.log
+    max-size: 10MB
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      vendorService:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        failureRateThreshold: 50.0
+        waitDurationInOpenState: 10000
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+
+      productService:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        failureRateThreshold: 50.0
+        waitDurationInOpenState: 10000
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+
+      customerService:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        failureRateThreshold: 50.0
+        waitDurationInOpenState: 10000
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+
+      orderService:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        failureRateThreshold: 50.0
+        waitDurationInOpenState: 10000
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+
+      cartService:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        failureRateThreshold: 50.0
+        waitDurationInOpenState: 10000
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+
+      paypromoService:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        failureRateThreshold: 50.0
+        waitDurationInOpenState: 10000
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
 
 cors:
   allowed-origins: http://localhost:3000

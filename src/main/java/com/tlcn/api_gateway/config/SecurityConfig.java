@@ -30,8 +30,11 @@ public class SecurityConfig {
         return http
             .csrf(ServerHttpSecurity.CsrfSpec::disable)
             .authorizeExchange(auth -> auth
+                // Public endpoints - no authentication required
                 .pathMatchers(
                     "/actuator/**",
+                    "/fallback/**",
+                    "/api/auth/**",
                     "/api/vendors/register-init",
                     "/api/vendors/verify-otp",
                     "/api/vendors/resend-otp",
@@ -45,11 +48,24 @@ public class SecurityConfig {
                     "/api/customers/forget-password",
                     "/api/customers/reset-password"
                 ).permitAll()
+                
+                // Vendor only endpoints
                 .pathMatchers("/api/vendors/**").hasRole("VENDOR")
-                .pathMatchers("/api/cart/**").hasRole( "CUSTOMER")
+                
+                // Customer only endpoints
+                .pathMatchers("/api/cart/**").hasRole("CUSTOMER")
                 .pathMatchers("/api/customers/**").hasRole("CUSTOMER")
+                
+                // Protected endpoints - both roles allowed
                 .pathMatchers("/api/orders/**").hasAnyRole("VENDOR", "CUSTOMER")
-                .pathMatchers("/api/products/**").permitAll() 
+                
+                // Public products endpoint
+                .pathMatchers("/api/products/**").permitAll()
+                
+                // Public flash-sales and discounts
+                .pathMatchers("/api/flash-sales/**", "/api/discounts/**").permitAll()
+                
+                // All other requests must be authenticated
                 .anyExchange().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> 
@@ -66,9 +82,11 @@ public class SecurityConfig {
     public CorsWebFilter corsWebFilter() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(allowedOrigins);
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("Content-Type", "Authorization", "X-Requested-With"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "X-Total-Count", "X-Page-Number"));
         configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
