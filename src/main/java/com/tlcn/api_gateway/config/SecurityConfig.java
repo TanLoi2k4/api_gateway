@@ -32,29 +32,27 @@ public class SecurityConfig {
             .authorizeExchange(auth -> auth
                 // Public endpoints - no authentication required
                 .pathMatchers(
-                    "/actuator/**",
-                    "/fallback/**",
-                    "/api/auth/**",
                     "/api/vendors/register-init",
-                    "/api/vendors/verify-otp",
+                    "/api/vendors/verify-otp/**",
                     "/api/vendors/resend-otp",
                     "/api/vendors/login",
                     "/api/vendors/forget-password",
                     "/api/vendors/reset-password",
                     "/api/customers/register-init",
-                    "/api/customers/verify-otp",
+                    "/api/customers/verify-otp/**",
                     "/api/customers/resend-otp",
                     "/api/customers/login",
                     "/api/customers/forget-password",
-                    "/api/customers/reset-password"
+                    "/api/customers/reset-password",
+                    "/actuator/**"
                 ).permitAll()
                 
-                // Vendor only endpoints
-                .pathMatchers("/api/vendors/**").hasRole("VENDOR")
+                // Protected endpoints - both roles allowed
+                .pathMatchers("/api/vendors/**").hasAnyRole("VENDOR","ADMIN")
                 
                 // Customer only endpoints
                 .pathMatchers("/api/cart/**").hasRole("CUSTOMER")
-                .pathMatchers("/api/customers/**").hasRole("CUSTOMER")
+                .pathMatchers("/customers/**").hasRole("CUSTOMER")
                 
                 // Protected endpoints - both roles allowed
                 .pathMatchers("/api/orders/**").hasAnyRole("VENDOR", "CUSTOMER")
