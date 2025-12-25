@@ -37,6 +37,18 @@ spring:
             - Path=/api/orders/**
           filters:
             - StripPrefix=1
+        - id: paypromo-service
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/admin/**
+          filters:
+            - StripPrefix=1
+        - id: admin-service
+          uri: http://localhost:8086
+          predicates:
+            - Path=/api/admin/**
+          filters:
+            - StripPrefix=1
       httpclient:
         connect-timeout: 5000
         response-timeout: 5000
